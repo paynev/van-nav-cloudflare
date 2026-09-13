@@ -1,0 +1,12 @@
+{
+  "name": "van-nav-makers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "van-nav 轻量导航站 — EdgeOne Makers 版（React 前端 + Node 云函数 + Blob 存储）",
+  "type": "module",
+  "dependencies": {
+    "@edgeone/pages-blob": "^0.0.14",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
