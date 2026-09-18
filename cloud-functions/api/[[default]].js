@@ -68,14 +68,71 @@ function nextId(existing) {
   return id;
 }
 
-async function ensureUser() {
-  const user = await readDoc("user.json", null);
-  if (!user) {
-    const u = { id: nextId([]), name: "admin", password: "admin" };
-    await writeDoc("user.json", u);
-    return u;
+const ADMIN_USER_ENV_KEYS = ["ADMIN_USER", "ADMIN_USERNAME"];
+const ADMIN_PASSWORD_ENV_KEYS = ["ADMIN_PASSWORD", "ADMIN_PASS"];
+
+// 该账号是改造前自动生成的弱口令默认值，遇到它会强制用环境变量覆盖一次
+const LEGACY_DEFAULT = { name: "admin", password: "admin" };
+
+/**
+ * 读取运行时环境变量。
+ * EdgeOne Makers 把环境变量注入到 req.context.env（禁止使用 process.env）。
+ */
+function resolveEnv(req) {
+  return req?.context?.env || req?.env || null;
+}
+
+function readEnvValue(env, keys) {
+  for (const key of keys) {
+    const v = env?.[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
   }
-  return user;
+  return "";
+}
+
+function isLegacyDefaultUser(user) {
+  return user?.name === LEGACY_DEFAULT.name && user?.password === LEGACY_DEFAULT.password;
+}
+
+/**
+ * 获取管理员账号，必要时用环境变量初始化。
+ * 返回：{ ok: true, user } 或 { ok: false, missing, errorMessage }
+ */
+async function ensureUser(req) {
+  const env = resolveEnv(req);
+  const envUser = readEnvValue(env, ADMIN_USER_ENV_KEYS);
+  const envPassword = readEnvValue(env, ADMIN_PASSWORD_ENV_KEYS);
+  const missing = [];
+  if (!envUser) missing.push(ADMIN_USER_ENV_KEYS[0]);
+  if (!envPassword) missing.push(ADMIN_PASSWORD_ENV_KEYS[0]);
+
+  const stored = await readDoc("user.json", null);
+
+  // 已有账号且不是旧的弱口令默认值 —— 直接使用，无需读环境变量
+  if (stored && !isLegacyDefaultUser(stored)) {
+    return { ok: true, user: stored };
+  }
+
+  // 首次初始化（或仍是旧的 admin/admin）—— 必须由环境变量提供凭据
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      missing,
+      needEnv: true,
+      errorMessage:
+        `尚未配置管理员环境变量（缺失：${missing.join("、")}）。` +
+        `请先设置后再登录：edgeone makers env set ${ADMIN_USER_ENV_KEYS[0]} "<账号>"; ` +
+        `edgeone makers env set ${ADMIN_PASSWORD_ENV_KEYS[0]} "<密码>"，然后重新部署。`,
+    };
+  }
+
+  const user = {
+    id: stored?.id || nextId([]),
+    name: envUser,
+    password: envPassword,
+  };
+  await writeDoc("user.json", user);
+  return { ok: true, user };
 }
 
 async function ensureSearchEngines() {
@@ -235,7 +292,18 @@ app.get("/", async (req, res) => {
 // POST /api/login
 app.post("/login", async (req, res) => {
   const { name, password } = req.body || {};
-  const user = await ensureUser();
+
+  // 首次使用：用环境变量初始化管理员账号，未配置则直接提示
+  const init = await ensureUser(req);
+  if (!init.ok) {
+    return res.status(500).json({
+      success: false,
+      errorMessage: init.errorMessage,
+      data: { missing: init.missing, needEnv: true },
+    });
+  }
+  const user = init.user;
+
   if (user.name !== name) {
     return res.json({ success: false, errorMessage: "用户名不存在" });
   }
@@ -364,7 +432,15 @@ app.post("/admin/importTools", requireAuth, async (req, res) => {
 // PUT /api/admin/user
 app.put("/admin/user", requireAuth, async (req, res) => {
   const { name, password } = req.body || {};
-  const user = await ensureUser();
+  const init = await ensureUser(req);
+  if (!init.ok) {
+    return res.status(500).json({
+      success: false,
+      errorMessage: init.errorMessage,
+      data: { missing: init.missing, needEnv: true },
+    });
+  }
+  const user = init.user;
   if (name) user.name = name;
   if (password) user.password = password;
   await writeDoc("user.json", user);
