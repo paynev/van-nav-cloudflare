@@ -1,0 +1,27 @@
+name = "van-nav"
+compatibility_date = "2025-06-01"
+pages_build_output_dir = "."
+
+# ─────────────────────────────────────────────────────────────
+# D1 数据库绑定
+#
+# 第一次部署前需要：
+#   1. npx wrangler d1 create van-nav-db
+#      （把返回的 database_id 填到下面）
+#   2. npx wrangler d1 execute van-nav-db --remote --file=./schema.sql
+# ─────────────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "van-nav-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+
+# ─────────────────────────────────────────────────────────────
+# Cloudflare Zero Trust 环境变量
+#
+# 也可以在 Pages 项目 Settings → Environment variables 里配置（推荐，便于区分环境）。
+#   CF_ACCESS_TEAM_DOMAIN  Zero Trust 团队域名，如 yourteam.cloudflareaccess.com
+#   CF_ACCESS_AUD          Access 应用的 Audience Tag（AUD）
+# ─────────────────────────────────────────────────────────────
+[vars]
+CF_ACCESS_TEAM_DOMAIN = ""
+CF_ACCESS_AUD = ""

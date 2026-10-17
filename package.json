@@ -1,12 +1,16 @@
 {
-  "name": "van-nav-makers",
+  "name": "van-nav-cloudflare",
   "version": "1.0.0",
   "private": true,
-  "description": "van-nav 轻量导航站 — EdgeOne Makers 版（React 前端 + Node 云函数 + Blob 存储）",
+  "description": "van-nav 轻量导航站 — Cloudflare Pages 版（React 静态前端 + Pages Functions + D1 + Zero Trust）",
   "type": "module",
-  "dependencies": {
-    "@edgeone/pages-blob": "^0.0.14",
-    "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2"
+  "scripts": {
+    "dev": "wrangler pages dev . --port 8788",
+    "deploy": "wrangler pages deploy .",
+    "d1:create": "wrangler d1 create van-nav-db",
+    "d1:init": "wrangler d1 execute van-nav-db --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }

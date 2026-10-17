@@ -1,6 +1,15 @@
+# 依赖
 node_modules/
-.edgeone/
+
+# 本地开发
+.wrangler/
+.dev.vars
 .env
+
+# 日志与系统文件
 *.log
 .DS_Store
+
+# 工作目录私有文件
 .workbuddy/
+.edgeone/

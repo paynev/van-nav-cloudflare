@@ -1,0 +1,11 @@
+# Cloudflare Pages 静态资源上传忽略清单
+# 只排除本地/私有文件；functions/ 与 lib/ 会被 Functions 编译器打包，
+# 不要加进来，否则可能导致 Function 构建失败
+node_modules
+.wrangler
+.dev.vars
+.dev.vars.example
+.env
+.git
+.workbuddy
+.edgeone
