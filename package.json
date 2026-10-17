@@ -2,13 +2,13 @@
   "name": "van-nav-cloudflare",
   "version": "1.0.0",
   "private": true,
-  "description": "van-nav 轻量导航站 — Cloudflare Pages 版（React 静态前端 + Pages Functions + D1 + Zero Trust）",
+  "description": "van-nav 轻量导航站 — Cloudflare Worker 版（React 静态前端 + Worker + D1 + Zero Trust）",
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev . --port 8788",
-    "deploy": "wrangler pages deploy .",
-    "d1:create": "wrangler d1 create van-nav-db",
-    "d1:init": "wrangler d1 execute van-nav-db --remote --file=./schema.sql"
+    "dev": "wrangler dev --port 8788",
+    "deploy": "wrangler deploy",
+    "d1:list": "wrangler d1 list",
+    "d1:init": "wrangler d1 execute van-nav-db --remote --file=./schema.sql -y"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

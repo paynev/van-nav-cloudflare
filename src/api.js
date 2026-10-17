@@ -1,5 +1,5 @@
 /**
- * van-nav —— Cloudflare Pages Functions 版后端
+ * van-nav —— Cloudflare Worker 版 API 层
  *
  * 由 EdgeOne Makers 云函数（Express + Blob）改写而来：
  *   - 存储：EdgeOne Blob  →  Cloudflare D1（lib/store.js）
@@ -8,14 +8,14 @@
  * API 响应结构保持与旧版一致：{ success, message?, data?, errorMessage? }
  */
 
-import { readDoc, writeDoc, getJwtSecret } from "../../lib/store.js";
-import { signJwt, verifyJwt } from "../../lib/jwt.js";
+import { readDoc, writeDoc, getJwtSecret } from "../lib/store.js";
+import { signJwt, verifyJwt } from "../lib/jwt.js";
 import {
   accessConfig,
   verifyAccessToken,
   readAccessCookie,
   identityFromAccess,
-} from "../../lib/access.js";
+} from "../lib/access.js";
 
 const DEFAULT_SETTING = {
   id: 1,
@@ -82,7 +82,7 @@ function imgContentType(url) {
 function notConfiguredMessage(missing) {
   return (
     `尚未配置 Cloudflare Zero Trust（缺失：${missing.join("、")}）。` +
-    `请在 Pages 项目 Settings → Environment variables 添加 CF_ACCESS_TEAM_DOMAIN（如 yourteam.cloudflareaccess.com）` +
+    `请在 Worker 的 Settings → Variables and Secrets（或 wrangler.toml 的 [vars]）添加 CF_ACCESS_TEAM_DOMAIN（如 yourteam.cloudflareaccess.com）` +
     `与 CF_ACCESS_AUD（Access 应用的 Audience Tag），然后重新部署。`
   );
 }
@@ -614,7 +614,7 @@ async function readBody(request) {
   }
 }
 
-export async function onRequest(context) {
+export async function handleApi(context) {
   const { request, env, ctx } = context;
   const db = env.DB;
   const url = new URL(request.url);
@@ -630,7 +630,7 @@ export async function onRequest(context) {
       {
         success: false,
         errorMessage:
-          "D1 绑定 DB 不存在。请在 Pages 项目 Settings → Functions → D1 database bindings 添加绑定（变量名 DB），或填写 wrangler.toml 里的 database_id 后重新部署。",
+          "D1 绑定 DB 不存在。正常部署时 wrangler 会按 database_name 自动创建并绑定；若仍缺失，请检查 wrangler.toml 的 [[d1_databases]] 段落。",
       },
       500
     );

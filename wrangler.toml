@@ -1,26 +1,42 @@
 name = "van-nav"
+main = "src/worker.js"
 compatibility_date = "2025-06-01"
-pages_build_output_dir = "."
 
 # ─────────────────────────────────────────────────────────────
-# D1 数据库绑定
+# 静态资源：前端 React 构建产物（index.html / static / 图标）
 #
-# 第一次部署前需要：
-#   1. npx wrangler d1 create van-nav-db
-#      （把返回的 database_id 填到下面）
-#   2. npx wrangler d1 execute van-nav-db --remote --file=./schema.sql
+# run_worker_first = true —— 所有请求先交给 Worker 处理，
+# 由 src/worker.js 决定是走 API / 后台门禁 / 静态资源。
+# ─────────────────────────────────────────────────────────────
+[assets]
+directory = "public"
+binding = "ASSETS"
+run_worker_first = true
+
+# ─────────────────────────────────────────────────────────────
+# D1 数据库绑定 —— 故意不写 database_id
+#
+# wrangler deploy 时会按 database_name 查找数据库：
+#   存在 → 直接绑定；不存在 → 自动创建再绑定（wrangler 4.45+ 的自动资源预置，默认开启）。
+# 因此首次部署无需任何手工建库步骤。
+#
+# 注意：database_name 必须显式写出。若只写 binding、不写 database_name，
+# wrangler 会拿 binding 名当数据库名（workers-sdk #11870），与预期不符。
+#
+# 表结构不需要手动执行 schema.sql：lib/store.js 在首次读写文档时
+# 会执行 CREATE TABLE IF NOT EXISTS docs (...)。
 # ─────────────────────────────────────────────────────────────
 [[d1_databases]]
 binding = "DB"
 database_name = "van-nav-db"
-database_id = "REPLACE_WITH_YOUR_D1_ID"
 
 # ─────────────────────────────────────────────────────────────
-# Cloudflare Zero Trust 环境变量
+# Cloudflare Zero Trust（后台 /admin 与 /login 的登录认证）
 #
-# 也可以在 Pages 项目 Settings → Environment variables 里配置（推荐，便于区分环境）。
-#   CF_ACCESS_TEAM_DOMAIN  Zero Trust 团队域名，如 yourteam.cloudflareaccess.com
+#   CF_ACCESS_TEAM_DOMAIN  团队域名，如 yourteam.cloudflareaccess.com
 #   CF_ACCESS_AUD          Access 应用的 Audience Tag（AUD）
+#
+# 也可以只写在这里做占位，实际值在控制台 Worker 设置里配（推荐，便于区分环境）。
 # ─────────────────────────────────────────────────────────────
 [vars]
 CF_ACCESS_TEAM_DOMAIN = ""
